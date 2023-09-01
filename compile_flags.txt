@@ -1,0 +1,10 @@
+-I
+../llvm-mos/mos-platform/nes/include
+-I
+../llvm-mos/mos-platform/nes-mmc1/include
+-I
+../llvm-mos/mos-platform/common/include
+-D
+__NES__
+-Wno-c++11-narrowing
+-std=c++20
