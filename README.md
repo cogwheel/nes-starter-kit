@@ -4,21 +4,18 @@ This is an example project using llvm-mos targeting the MMC1 mapper. It's very m
 
 ## Prerequisites
 
-- llvm-mos
-  - This needs to be findable by CMake. Currently I just put llvm-mos/bin in my path; need to find something more robust
+Note: this has only been tested on Ubuntu 22.04 (bash) and Windows 11 (powershell). YMMV.
+
+- [llvm-mos SDK](https://github.com/llvm-mos/llvm-mos-sdk#download)
+  - This needs to be findable by CMake. You can set CMAKE_PREFIX_PATH to `path/to/llvm-mos` or you can add `path/to/llvm-mos/bin` to your PATH
 - CMake
+- GNU Make (or equivalent)
 - Python 3
-  - pillow
+  - pillow - for converting PNG to CHR
 
 ## Building
 
-To build the project simply run:
-
-```sh
-./build.sh
-```
-
-This will configure CMake and compile the ROM to ./build/nes-starter-kit.nes.
+To build the project simply run `build.sh` (unix) or `build.ps1` (Windows). This will configure CMake and compile the ROM to ./build/nes-starter-kit.nes.
 
 The build script will pass arguments to `make` so you can do, e.g.:
 
@@ -51,3 +48,4 @@ I'd like this project to demonstrate all the core aspects of NES development. He
 
 - [ ] Audio
 - [ ] PRG bank switching
+- [ ] Other build systems besides Makefiles

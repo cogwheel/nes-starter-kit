@@ -1,5 +1,7 @@
 #!/usr/bin/env sh
 set -e
 
-cmake -B build -DCMAKE_BUILD_TYPE=${BUILD_TYPE:-RelWithDebInfo}
+# TODO: support other build systems besides makefile
+cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=${BUILD_TYPE:-RelWithDebInfo}
+
 make -C build -j $@

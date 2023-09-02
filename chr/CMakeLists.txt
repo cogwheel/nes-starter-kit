@@ -1,3 +1,5 @@
+find_package(Python3 REQUIRED)
+
 # This .asm file uses .incbin to compile CHR data into a library
 set(CHR_ASM ${CMAKE_CURRENT_SOURCE_DIR}/chr.s)
 
@@ -12,9 +14,9 @@ foreach(PNG_FILE ${PNG_FILES})
 
     add_custom_command(
         OUTPUT ${CHR_FILE}
-        COMMAND python3 ${CONVERTER} ${PNG_FILE} ${CHR_FILE}
+        COMMAND ${Python3_EXECUTABLE} ${CONVERTER} ${PNG_FILE} ${CHR_FILE}
         # Ensure that `chr.s` is reassembled
-		COMMAND touch ${CHR_ASM}
+        COMMAND ${CMAKE_COMMAND} -E touch ${CHR_ASM}
         DEPENDS ${CONVERTER} ${PNG_FILE}
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMENT "Converting ${PNG_NAME}.png to ${PNG_NAME}.chr"
