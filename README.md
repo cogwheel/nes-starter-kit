@@ -35,3 +35,19 @@ BUILD_TYPE=Release ./build.sh
 The default is RelWithDebInfo.
 
 Of course, you can always just issue the `cmake` and `make` commands yourself. :)
+
+## TODOs
+
+I'd like this project to demonstrate all the core aspects of NES development. Here's what I've currently got planned:
+
+### Near term
+
+- [ ] Sprite animation
+- [ ] Controller input
+- [ ] CHR bank switching
+- [ ] Scrolling
+
+### Eventually
+
+- [ ] Audio
+- [ ] PRG bank switching
