@@ -6,3 +6,8 @@
     ; example. It will be converted to `background.chr` by the build script.
     ; this line INCludes the BINary data directly into the `.chr_rom_0` section
     .incbin "background.chr"
+
+.section .chr_rom_1,"a"
+    ;.incbin "your-own-png.chr"
+
+; Up to .chr_rom_31 (? TODO: verify)
