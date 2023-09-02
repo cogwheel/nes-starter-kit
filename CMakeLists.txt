@@ -34,7 +34,7 @@ add_link_options(
     # -Map generates a file with information about how the final binary's memory
     # is laid out. This will eventually be used to show the remaining space in
     # CHR-ROM, PRG-ROM, PRG-RAM, System RAM, and ZEROPAGE
-    
+
     # --lto-whole-program-visibility helps ensure clang does as many
     # optimizations as possible
     -Wl,-Map,${CMAKE_PROJECT_NAME}.map,--lto-whole-program-visibility
