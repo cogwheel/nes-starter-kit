@@ -36,6 +36,18 @@ BUILD_TYPE=Release ./build.sh
 
 The default is RelWithDebInfo.
 
+## Running
+
+You can load the ROM manually from the `build/` directory.
+
+There is also a `run` target which you can use with `make` or the build script:
+
+```powershell
+.\build.ps1 run
+```
+
+By default this will attempt to launch the ROM with your system's default app associated with `.nes` files. You can set the `EMULATOR` environment variable to use a specific program.
+
 ## Customizing
 
 You can set the name of the project in [CMakeLists.txt](CMakeLists.txt). Look for the line that starts `project(nes-starter-kit...`
