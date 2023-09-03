@@ -68,6 +68,14 @@ target_link_libraries(${ROM}
     nesdoug
 )
 
-# TODO: add helper targets for:
-#    - emitting assembly code for each module and/or the whole binary
-#    - launching the built ROM on your emulator of choice
+set(RUNNER ${CMAKE_SOURCE_DIR}/run_emulator.cmake)
+set(ROMFILE ${CMAKE_BINARY_DIR}/${ROM})
+
+add_custom_target(run
+    COMMAND ${CMAKE_COMMAND} -P ${RUNNER} -- ${ROMFILE}
+    COMMENT "Running ${ROMFILE}"
+    DEPENDS ${ROM} ${RUNNER}
+)
+
+# TODO: add helper target for emitting assembly code for each module and/or the
+# whole binary
