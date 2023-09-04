@@ -11,14 +11,14 @@ Note: I've only tested this on Ubuntu 22.04 (bash) and Windows 11 (powershell). 
 
 The rest of these should be available in your PATH:
 
-- CMake
-- GNU Make (or equivalent)
-- Python 3
-  - pillow - for converting PNG to CHR
+- [CMake](https://cmake.org/download/)
+- [Ninja](https://ninja-build.org/)
+- [Python 3](https://www.python.org/downloads/)
+  - [Pillow](https://pillow.readthedocs.io/en/stable/) - for converting PNG to CHR
 
 ## Building
 
-If you're familiar with CMake, have a quick glance at [`build.sh`](build.sh) and decide if you want to use it or not. Otherwise...
+If you're familiar with CMake, have a quick glance at [`build.sh`](build.sh) and decide if you want to use it or not. Ninja and "Unix Makefiles" generators are known to work. Otherwise...
 
 To build the project simply run `build.sh` ('nix) or `build.ps1` (Windows). This will configure CMake and compile the ROM to ./build/nes-starter-kit.nes.
 

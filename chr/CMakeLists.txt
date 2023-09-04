@@ -5,7 +5,7 @@ set(CHR_ASM ${CMAKE_CURRENT_SOURCE_DIR}/chr.s)
 
 set(CONVERTER ${CMAKE_CURRENT_SOURCE_DIR}/make_chr.py)
 
-# Convert PNGs to CHRs
+# Create commands to convert PNGs to CHRs
 set(CHR_FILES "")
 file(GLOB PNG_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.png)
 foreach(PNG_FILE ${PNG_FILES})
@@ -29,3 +29,8 @@ add_custom_target(convert_chrs DEPENDS ${CHR_FILES})
 
 add_library(chr_data OBJECT ${CMAKE_SOURCE_DIR}/chr/chr.s)
 add_dependencies(chr_data convert_chrs)
+
+# Allow `.incbin` to find the .chr file
+target_include_directories(chr_data PRIVATE
+    ${CMAKE_CURRENT_BINARY_DIR}
+)
