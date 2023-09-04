@@ -27,6 +27,10 @@ add_compile_options(
     -std=c++23             # We _can_ have nice things!
 )
 
+# `add_compile_options` adds -MD, -MT, and -MF to the Ninja config but they're
+# not supported by llvm assembler
+set(CMAKE_DEPFILE_FLAGS_ASM)
+
 add_link_options(
     -g -gdwarf-4 -Wall -Wextra -Werror # Same goes for the linker
 
@@ -56,6 +60,11 @@ set (ROM ${CMAKE_PROJECT_NAME}.nes)
 add_executable(${ROM}
     ${SOURCES}
     ${HEADERS}
+)
+
+target_include_directories(${ROM} PRIVATE
+    ${CMAKE_SOURCE_DIR}/3rdparty/libcxx
+    ${SRC}
 )
 
 target_link_libraries(${ROM}
