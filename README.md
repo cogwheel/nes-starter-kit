@@ -56,6 +56,10 @@ Any new files you add to `src/`, including any subdirectories, will be compiled.
 
 PNG files added to [`chr/`](chr/) will be automatically converted to .chr files during the build. See [`chr/make_chr.py`](chr/make_chr.py) for info on how to make compatible images. You will also need to add a new `.incbin` directive in [`chr/chr.s`](chr/chr.s) to incorporate them into the ROM.
 
+### VS Code
+
+If you copy `example_compile_flags.txt` to `compile_flags.txt` and change the llvm-mos path to suit your environment, then the `clangd` VS Code extension should give you full intellisense support.
+
 ## TODOs
 
 I'd like this project to demonstrate all the core aspects of NES development. Here's what I've currently got planned:
