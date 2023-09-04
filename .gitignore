@@ -2,3 +2,4 @@
 .vscode
 build/
 nohup.out
+compile_flags.txt
