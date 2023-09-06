@@ -18,11 +18,11 @@ The rest of these should be available in your PATH:
 
 ## Building
 
-If you're familiar with CMake, have a quick glance at [`build.sh`](build.sh) and decide if you want to use it or not. Ninja and "Unix Makefiles" generators are known to work. Otherwise...
+If you're familiar with CMake, have a quick glance at [`build.sh`](build.sh) and decide whether you want to use it. Ninja and "Unix Makefiles" generators are known to work. Otherwise...
 
-To build the project simply run `build.sh` ('nix) or `build.ps1` (Windows). This will configure CMake and compile the ROM to ./build/nes-starter-kit.nes.
+To build the project, simply run `build.sh` ('nix) or `build.ps1` (Windows). This will configure CMake and compile the ROM to ./build/nes-starter-kit.nes.
 
-The build script will pass arguments to `make` so you can do, e.g.:
+The build script will pass arguments to `ninja` so you can do, e.g.:
 
 ```sh
 ./build.sh clean
@@ -36,11 +36,25 @@ BUILD_TYPE=Release ./build.sh
 
 The default is RelWithDebInfo.
 
+### Q&D CMake intro
+
+For maximum productivity you'll want to get familiar with the way CMake works. Here's a quick overview grafted [a conversation in llvm-mos discord](https://discord.com/channels/1058149494107148399/1058150812691476593/1147638891894034603):
+
+CMake lets you generate build-system scripts (visual studio projects, makefiles, Ninja build scripts, etc.) appropriate for whatever system you're developing on. Then you use those tools to actually do the build. This project uses `Ninja` by default.
+
+CMakeLists.txt files are (mostly) declarative configuration for various targets (binaries, libraries, and such), their relationships, dependencies, and the way they get built. When you first run cmake, all of the results of processing CMakeLists.txt get baked into the build directory.
+
+Running cmake again in this directory will only update anything that has changed since it originally ran (new source code files, changes made to CMakeLists.txt itself, etc). A lot of the core configuration (build type, SDK location, etc.) remains fixed. For example, passing a different `CMAKE_BUILD_TYPE` will have no effect. If you want to change the configuration, you need to remove the CMakeCache.txt and CMakeFiles dirs from inside build/ dir, remove the build/ dir itself, or make a new config-specific build dir.
+
+The usual workflow is to make a `build` directory, `cd` into it, then do `cmake [options] ..`. This uses the CMakeLists.txt of the parent directory to do the configuration, and the results of the configuration are saved to the current `build` dircetory. Then you can issue your normal build system commands from there (e.g. `ninja run`).
+
+To configure for a different build type, you pass -DCMAKE_BUILD_TYPE=[something]. `something` can be one of `Debug`, `Release`, `RelWithDebInfo`, and `MinSizeRel`. This project's `.gitignore` filters out any directory that starts with `build`. So you can easily have several build directories each with a different configuration.
+
 ## Running
 
 You can load the ROM manually from the `build/` directory.
 
-There is also a `run` target which you can use with `make` or the build script:
+There is also a `run` target which you can use with `ninja` or the build script:
 
 ```powershell
 .\build.ps1 run
@@ -59,6 +73,8 @@ PNG files added to [`chr/`](chr/) will be automatically converted to .chr files 
 ### VS Code
 
 If you copy `example_compile_flags.txt` to `compile_flags.txt` and change the llvm-mos path to suit your environment, then the `clangd` VS Code extension should give you full intellisense support.
+
+TODO: Update this to use [llvm-mos' clangd](https://llvm-mos.org/wiki/Clangd).
 
 ## TODOs
 

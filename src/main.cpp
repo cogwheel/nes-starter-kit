@@ -3,6 +3,8 @@
 #include <nesdoug.h>
 #include <neslib.h>
 
+#include "explosion.hpp"
+
 constexpr char kScreenWidth = 32;
 constexpr char kScreenHeight = 30;
 constexpr int kScreenSize = kScreenWidth * kScreenHeight;
@@ -56,81 +58,6 @@ void init_ppu() {
   ppu_on_all();
 }
 
-struct Explosion {
-  char x{};
-  char y{};
-  char timer{};
-};
-
-// Circular buffer for explosion animations
-constexpr char kNumExplosions = 8;
-static Explosion explosions[kNumExplosions];
-
-// `explosion_head` is the index of the first active explosion, if any
-static int explosion_head = 0;
-
-// `explosion_tail` is the next empty explosion location. If this is the same
-// as `explosion_head`, it means there are no active explosions.
-static int explosion_tail = 0;
-
-static void addExplosion(Explosion const e) {
-  // Put the new explosion at the tail location, and increment the tail
-  explosions[explosion_tail++] = e;
-
-  // Wrap tail to 0 if necessary
-  if (explosion_tail == kNumExplosions)
-    explosion_tail = 0;
-
-  // Eject oldest explosion if buffer is full
-  if (explosion_tail == explosion_head) {
-    ++explosion_head;
-    if (explosion_head == kNumExplosions)
-      explosion_head = 0;
-  }
-}
-
-static void animateExplosion(Explosion &explosion) {
-  // move the explosion up over time
-  const char sprite_y = explosion.y + explosion.timer - 31;
-
-  // Select the animation frame. There are 8 frames (0-7), and explosion.timer
-  // starts at 31. So we need to divide the timer by 4 (shift right by 2) and
-  // subtract from 7.
-  //
-  // Note the subtraction could be avoided if the animations were stored in
-  // reverse order
-  const char anim_offset = (7 - (explosion.timer >> 2));
-
-  // Explosion starts at tile ID 0x30. The attribute 1 chooses the second
-  // sprite palette.
-  oam_spr(explosion.x, sprite_y, 0x30 + anim_offset, 1);
-
-  if (--explosion.timer == 0) {
-    // Expired. Increment head
-    if (++explosion_head == kNumExplosions)
-      explosion_head = 0;
-  }
-}
-
-static void animateExplosions() {
-  int head = explosion_head;
-
-  // If the head of the circular buffer is past the tail then consume until the
-  // end of the buffer and start at the beginning
-  if (head > explosion_tail) {
-    for(; head < kNumExplosions; ++head) {
-      animateExplosion(explosions[head]);
-    }
-    head = 0;
-  }
-
-  // If the head of the cicular buffer is less than the tail, then consume
-  // until reaching the tail
-  for (; head < explosion_tail; ++head) {
-    animateExplosion(explosions[head]);
-  }
-}
-
 int main() {
   init_ppu();
 
@@ -161,6 +88,7 @@ int main() {
     // Speed up when pressing B
     const char speed = pad_state & PAD_B ? 2 : 1;
 
+    // Move the cogwheel in response to pad directions
     if (pad_state & PAD_UP) {
       cog_y -= speed;
     } else if (pad_state & PAD_DOWN) {
@@ -174,14 +102,13 @@ int main() {
     }
 
     if (pad_state & PAD_A) {
-      // Create explosions either if A wasn't previously pressed or every 4 frames
+      // Create an explosion immediately when A is pressed, and then every 8
+      // frames as long as A is held
+      // `& 0x7` is equivalent to % `8`
       if (!(prev_pad_state & PAD_A) || !(get_frame_count() & 0x7)) {
-        // Randomly place around cogwheel
-        addExplosion({
-          .x = (char)(cog_x + (rand8() & 0xF)),
-          .y = (char)(cog_y + 8 + (rand8() & 0xF)),
-          .timer = 31,
-        });
+        const char x = cog_x + (rand8() & 0xF);
+        const char y = cog_y + 8 + (rand8() & 0xF);
+        addExplosion(x, y);
       }
     }
 
@@ -210,7 +137,7 @@ int main() {
       multi_vram_buffer_horz(buffer, 3, NTADR_A(14, 12));
     }
 
-    pal_col(0, palette_color);
+    pal_col(3, palette_color);
 
     if (++counter == 30) counter = 0;
 
