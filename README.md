@@ -66,8 +66,8 @@ I'd like this project to demonstrate all the core aspects of NES development. He
 
 ### Near term
 
-- [ ] Sprite animation
-- [ ] Controller input
+- [X] Sprite animation
+- [X] Controller input
 - [ ] CHR bank switching
 - [ ] Scrolling
 
