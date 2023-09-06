@@ -8,6 +8,9 @@
     .incbin "background.chr"
 
 .section .chr_rom_1,"a"
+    .incbin "sprite.chr"
+
+.section .chr_rom_2,"a"
     ;.incbin "your-own-png.chr"
 
 ; Up to .chr_rom_31 (? TODO: verify)
