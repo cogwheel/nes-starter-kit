@@ -2,6 +2,8 @@
 
 This is an example project using llvm-mos targeting the MMC1 mapper. It's very much work-in-progress. There will be more to come.
 
+![nes-starter-kit](https://github.com/cogwheel/nes-starter-kit/assets/2105215/e4b32ece-9fce-4696-8c72-0c00c4c274be)
+
 ## Prerequisites
 
 Note: I've only tested this on Ubuntu 22.04 (bash) and Windows 11 (powershell). YMMV.
