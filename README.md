@@ -74,9 +74,9 @@ PNG files added to [`chr/`](chr/) will be automatically converted to .chr files 
 
 ### VS Code
 
-If you copy `example_compile_flags.txt` to `compile_flags.txt` and change the llvm-mos path to suit your environment, then the `clangd` VS Code extension should give you full intellisense support.
+llvm-mos includes a custom clangd server that knows how to handle llvm-mos-specific extensions, system include directories, etc. To set this up, follow the [instructions on the llvm-mos wiki](https://llvm-mos.org/wiki/Clangd).
 
-TODO: Update this to use [llvm-mos' clangd](https://llvm-mos.org/wiki/Clangd).
+Note: the build scripts above already include `-DCMAKE_EXPORT_COMPILE_COMMANDS=ON`.
 
 ## TODOs
 
