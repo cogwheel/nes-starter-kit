@@ -86,7 +86,7 @@ I'd like this project to demonstrate all the core aspects of NES development. He
 
 - [X] Sprite animation
 - [X] Controller input
-- [ ] CHR bank switching
+- [X] CHR bank switching
 - [ ] Scrolling
 
 ### Eventually
