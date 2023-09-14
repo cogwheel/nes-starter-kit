@@ -112,12 +112,14 @@ int main() {
       }
     }
 
+    prev_pad_state = pad_state;
+
     animateExplosions();
 
     // Adding Cogwheel after the explosions means the explosions will be prioritized
     for (char row = 0; row < 3; ++row) {
       for (char col = 0; col < 3; ++col) {
-        // Convert subpixels to pixels and add row/col
+        // Convert row/col to pixels and add to cog position
         char const sprite_x = cog_x + (col << 3);
         char const sprite_y = cog_y + (row << 3);
 
@@ -127,20 +129,19 @@ int main() {
       }
     }
 
-    if(counter == 0) {
+    // Change the color every half second (60 fps)
+    if(++counter == 30) {
+      counter = 0;
       if (++palette_color == 64) palette_color = 0;
+      pal_col(3, palette_color);
 
-      // Tell `neslib` that we want to do a buffered background data transfer
-      // this frame
+      // Print the current palette color in hex
       char buffer[4];
       std::snprintf(buffer, sizeof(buffer), "$%02x", static_cast<int>(palette_color));
+
+      // Copy the text into the VRAM buffer. This will draw characters at the
+      // given VRAM address during the next vertical blank period.
       multi_vram_buffer_horz(buffer, 3, NTADR_A(14, 12));
     }
-
-    pal_col(3, palette_color);
-
-    if (++counter == 30) counter = 0;
-
-    prev_pad_state = pad_state;
   }
 }

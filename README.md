@@ -93,4 +93,4 @@ I'd like this project to demonstrate all the core aspects of NES development. He
 
 - [ ] Audio
 - [ ] PRG bank switching
-- [ ] Other build systems besides Makefiles
+- [ ] Generate Visual Studio projects with cmake

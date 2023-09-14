@@ -63,7 +63,6 @@ add_executable(${ROM}
 )
 
 target_include_directories(${ROM} PRIVATE
-    ${CMAKE_SOURCE_DIR}/3rdparty/libcxx
     ${SRC}
 )
 
