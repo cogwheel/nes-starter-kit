@@ -1,5 +1,5 @@
+#include <bank.h>
 #include <cstdio>
-
 #include <nesdoug.h>
 #include <neslib.h>
 
@@ -65,10 +65,12 @@ int main() {
   char palette_color = 0;
   char counter = 0;
 
+  // Start with the first sprite bank
+  char sprite_bank = 1;
+
   // Cogwheel position
   char cog_x = 15 * kPixelsPerTile;
   char cog_y = 14 * kPixelsPerTile;
-
 
   // Store pad state across frames to check for changes
   char prev_pad_state = 0;
@@ -77,8 +79,13 @@ int main() {
     // Wait for the NMI routine to end so we can start working on the next frame
     ppu_wait_nmi();
 
-    // The OAM (object attribute memory) is an area of RAM that contains data about
-    // all the sprites that will be drawn next frame.
+    // Set the MMC1 to use the chosen CHR bank for the upper half of the PPU
+    // pattern table. Do this first thing after NMI finishes so that we are
+    // still in VBLANK.
+    set_chr_bank_1(sprite_bank);
+
+    // The OAM (object attribute memory) is an area of RAM that contains data
+    // about all the sprites that will be drawn next frame.
     oam_clear();
 
     // Note: if you don't poll a controller during a frame, emulators will
@@ -110,6 +117,11 @@ int main() {
         const char y = cog_y + 8 + (rand8() & 0xF);
         addExplosion(x, y);
       }
+    }
+
+    if (prev_pad_state & PAD_SELECT && !(pad_state & PAD_SELECT)) {
+      // Select was released - swap CHR banks
+      sprite_bank = sprite_bank == 1 ? 2 : 1;
     }
 
     prev_pad_state = pad_state;
