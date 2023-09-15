@@ -3,12 +3,68 @@
 #include <nesdoug.h>
 #include <neslib.h>
 
+#include <algorithm>
+
 #include "explosion.hpp"
 
 MAPPER_PRG_ROM_KB(32);
 MAPPER_CHR_ROM_KB(128);
 MAPPER_PRG_RAM_KB(8);
 MAPPER_USE_VERTICAL_MIRRORING;
+
+
+// The first byte of a nametable op is either the high byte of the VRAM address
+// for a single-tile op, or the op-code for a multi-byte operation. Nametable
+// addresses end at 0x2FFF, so multi-byte operations are indicated by values
+// greater than 0x30
+
+constexpr char NAMETABLE_OP_MULTI_START = 0x30;
+
+enum nametable_opcode : char {
+  single = NAMETABLE_OP_MULTI_START,
+  copy_horz,
+};
+
+struct nametable_op_single_header {
+  char address_hi;
+  char address_lo;
+  char data;
+};
+
+struct nametable_op_multi_header {
+  nametable_opcode opcode;
+  char address_hi;
+  char address_lo;
+  char size;
+};
+
+extern char VRAM_BUF[];
+extern unsigned char VRAM_INDEX;
+
+void one_nametable_buffer(unsigned address, char data) {
+  auto &header = *reinterpret_cast<nametable_op_single_header *>(VRAM_BUF + VRAM_INDEX);
+  header.address_hi = address >> 8;
+  header.address_lo = address & 0xFF;
+  header.data = data;
+  VRAM_INDEX += sizeof(nametable_op_single_header);
+  VRAM_BUF[VRAM_INDEX] = 0xFF;
+}
+
+void multi_vram_buffer_horz(unsigned address, unsigned char size, char *data) {
+  auto dest = VRAM_BUF + VRAM_INDEX;
+  auto &header = *reinterpret_cast<nametable_op_multi_header *>(dest);
+  header.opcode = nametable_opcode::copy_horz;
+  header.address_hi = address >> 8;
+  header.address_lo = address & 0xFF;
+  header.size = size;
+
+  dest += sizeof(nametable_op_multi_header);
+#pragma unroll 8
+  for (unsigned char i = 0; i < size; ++i, ++VRAM_INDEX) {
+    VRAM_BUF[VRAM_INDEX] = data[i];
+  }
+  VRAM_BUF[VRAM_INDEX] = 0xFF;
+}
 
 constexpr char kScreenWidth = 32;
 constexpr char kScreenHeight = 30;
