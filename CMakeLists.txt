@@ -17,9 +17,10 @@ set (CMAKE_C_FLAGS "-std=c23")
 
 # Set compile flags for all objects
 add_compile_options(
-    -Os             # Use -Os for everything or generated code will be too large
-    -g -gdwarf-4    # We want debug info generated for all builds; it doesn't go into the ROM
-    -Wall -Wextra   # Compiler's got your back; -Werror is enabled for Release and MinSizeRel
+    -Os                    # Use -Os for everything or generated code will be too large
+    -g -gdwarf-4           # We want debug info generated for all builds; it doesn't go into the ROM
+    -Wall -Wextra          # Compiler's got your back; -Werror is enabled for Release and MinSizeRel
+    -Wno-char-subscripts   # Let llvm-mos decide whether char indexes are OK
 )
 
 # `add_compile_options` adds -MD, -MT, and -MF to the Ninja config but they're
@@ -73,8 +74,8 @@ target_link_options(${ROM} PRIVATE
     # (TODO: check if it's expecting 8KiB increments?)
     -Tc-in-prg-ram-0.ld
 
-    # `prg-rom-fixed` uses the default 32 KiB of PRG-ROM. TODO: PRG-ROM banking
-    -Tprg-rom-fixed.ld
+    # `prg-rom-banked` allows use of up to 256 KB of PRG rom on MMC1
+    -Tprg-rom-banked.ld
 )
 
 target_link_libraries(${ROM}

@@ -2,6 +2,8 @@
 
 #include <neslib.h>
 
+namespace cog {
+
 // Max number of explosions to display simultaneously
 constexpr char kNumExplosions = 10;
 
@@ -35,7 +37,7 @@ static int explosion_head = 0;
 // as `explosion_head`, it means there are no active explosions.
 static int explosion_tail = 0;
 
-void addExplosion(char x, char y) {
+void add_explosion(char x, char y) {
   // Put the new explosion at the tail location, and increment the tail
   explosions[explosion_tail++] = {x, y, kExplosionTimer};
 
@@ -52,7 +54,7 @@ void addExplosion(char x, char y) {
   }
 }
 
-static void animateExplosion(Explosion &explosion) {
+static void animate_explosion(Explosion &explosion) {
   // move the explosion up over time
   const char sprite_y = explosion.y + explosion.timer - kExplosionTimer;
 
@@ -74,14 +76,14 @@ static void animateExplosion(Explosion &explosion) {
   }
 }
 
-void animateExplosions() {
+void animate_explosions() {
   int head = explosion_head;
 
   // If the head of the circular buffer is past the tail then consume until the
   // end of the buffer
   if (head > explosion_tail) {
     for(; head < kNumExplosions; ++head) {
-      animateExplosion(explosions[head]);
+      animate_explosion(explosions[head]);
     }
     // Wrap to the beginning of the buffer
     head = 0;
@@ -90,6 +92,8 @@ void animateExplosions() {
   // If the head of the cicular buffer is less than the tail, then consume
   // until reaching the tail
   for (; head < explosion_tail; ++head) {
-    animateExplosion(explosions[head]);
+    animate_explosion(explosions[head]);
   }
 }
+
+} // end namespace cog
