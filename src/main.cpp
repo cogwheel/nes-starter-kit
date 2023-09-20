@@ -3,8 +3,6 @@
 #include <nesdoug.h>
 #include <neslib.h>
 
-#include <algorithm>
-
 #include "explosion.hpp"
 
 MAPPER_PRG_ROM_KB(32);
@@ -93,7 +91,7 @@ void init_ppu() {
   ppu_off();
 
   // Set up bufferd VRAM operations (see `multi_vram_buffer_horz` below)
-  set_vram_buffer();
+  set_nametable_buffer();
 
   // Use lower half of PPU memory for background tiles
   bank_bg(0);
@@ -214,7 +212,7 @@ int main() {
 
       // Copy the text into the VRAM buffer. This will draw characters at the
       // given VRAM address during the next vertical blank period.
-      multi_vram_buffer_horz(buffer, 3, NTADR_A(14, 12));
+      nametable_buffer_copy_horz(buffer, NTADR_A(14, 12), 3);
     }
   }
 }
