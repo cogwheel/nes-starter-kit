@@ -5,6 +5,11 @@
 
 #include "explosion.hpp"
 
+MAPPER_PRG_ROM_KB(32);
+MAPPER_CHR_ROM_KB(128);
+MAPPER_PRG_RAM_KB(8);
+MAPPER_USE_VERTICAL_MIRRORING;
+
 constexpr char kScreenWidth = 32;
 constexpr char kScreenHeight = 30;
 constexpr int kScreenSize = kScreenWidth * kScreenHeight;
