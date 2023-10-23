@@ -1,5 +1,5 @@
-#include <bank.h>
 #include <cstdio>
+#include <mapper.h>
 #include <nesdoug.h>
 #include <neslib.h>
 
