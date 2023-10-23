@@ -1,0 +1,7 @@
+{
+    "cmake.configureOnOpen": false,
+    "clangd.arguments": [
+        ! CHANGEME "--query-driver=<path-to-llvm-mos>/bin/*clang*"
+    ],
+    "clangd.path": ! CHANGEME "<path-to-llvm-mos>/bin/clangd.exe"
+}

@@ -74,7 +74,7 @@ PNG files added to [`chr/`](chr/) will be automatically converted to .chr files 
 
 ### VS Code
 
-llvm-mos includes a custom clangd server that knows how to handle llvm-mos-specific extensions, system include directories, etc. To set this up, follow the [instructions on the llvm-mos wiki](https://llvm-mos.org/wiki/Clangd).
+llvm-mos includes a custom clangd server that knows how to handle llvm-mos-specific extensions, system include directories, etc. To set this up, rename `.vscode/example_settings.json` to `.vscode/settings.json` or follow the [instructions on the llvm-mos wiki](https://llvm-mos.org/wiki/Clangd).
 
 Note: the build scripts above already include `-DCMAKE_EXPORT_COMPILE_COMMANDS=ON`.
 
