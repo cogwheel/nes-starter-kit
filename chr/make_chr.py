@@ -1,16 +1,26 @@
 """Convert an image to NES CHR tile data.
 
-The input image must be 128 pixels wide and use exactly 4 colors when converted
-to grayscale.  Darker colors in the source image will be given lower palette
-indexes in the tile data. (TODO: make this customizable)
+For the most intuitive, consistent results, the input file should be 128x128,
+and each 8x8 tile should contain no more than four colors, with either 
+transparency (if present) or black being interpreted as transparent areas of 
+the tile.
+
+Complete 8x8 tiles will be copied starting from the top left of the image in 
+row-major order. Partial tiles at the right or bottom will be ignored. Each 
+tile will be converted to 4 colors (or 3 if the file supports transparency)
+and sorted into ascending-value order. This will cause the darkest color in 
+each tile to be treated as transparent. If the tile contained more colors, 
+the exact collapse into 4 or 3 colors is determined by PIL.
 
 Any lossless file format supported by PIL should work (PNG, GIF, BMP, etc.).
 """
 
 import argparse
 from pathlib import Path
+from sys import stderr
 
 from functools import reduce
+from itertools import chain
 from PIL import Image
 
 TILE_SIZE = 8
@@ -32,24 +42,32 @@ def tile_data(image: Image) -> (bytes, bytes):
         reduce(
             lambda a, b: (a[0] << 1 | b[0], a[1] << 1 | b[1]),
             (
-                (px & 0b01, (px >> 1) & 0b01) for px in 
+                (px >> 1 & 0b01, px & 0b01) for px in 
                 (image.getpixel((x, y)) for x in range(image.width))
             ),
             (0, 0)
         )
         for y in range(image.height)
     ]
-    planes = tuple(zip(*rows))
-    return (bytes(stream) for stream in planes)
+    planes = zip(*rows)
+    return bytes(chain(*planes))
 
 def transcribe_chr(image: Image, outfile: Path):
     image = image.convert('RGBA' if image.has_transparency_data else 'RGB')
-    with open(outfile, "wb") as file:
-        for y in range(TILE_SIZE, image.height + 1, TILE_SIZE):
-            for x in range(TILE_SIZE, image.width + 1, TILE_SIZE): 
-                p0, p1 = tile_data(image.crop((x - TILE_SIZE, y - TILE_SIZE, x, y)))
-                file.write(p1)
-                file.write(p0)
+    try:
+        with open(outfile, "wb") as file:
+            padding = 0x1000
+            for y in range(TILE_SIZE, image.height + 1, TILE_SIZE):
+                for x in range(TILE_SIZE, image.width + 1, TILE_SIZE): 
+                    tile = tile_data(image.crop((x - TILE_SIZE, y - TILE_SIZE, x, y)))
+                    if padding < len(tile):
+                        raise StopIteration
+                    padding -= len(tile)
+                    file.write(tile)
+            file.write(bytes(0 for _ in range(padding)))
+    except StopIteration:
+        print(f"source file \"{outfile.name}\" contains more tiles than can fit in a 4k CHR archive.", file=stderr)
+    
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
