@@ -2,8 +2,8 @@
 
 For the most intuitive, consistent results, the input file should be 128x128,
 and each 8x8 tile should contain no more than four colors, with either 
-transparency (if present) or black being interpreted as transparent areas of 
-the tile.
+transparency (counted as a color if present) or black being interpreted as 
+transparent areas of the tile.
 
 Complete 8x8 tiles will be copied starting from the top left of the image in 
 row-major order. Partial tiles at the right or bottom will be ignored. Each 
@@ -11,6 +11,10 @@ tile will be converted to 4 colors (or 3 if the file supports transparency)
 and sorted into ascending-value order. This will cause the darkest color in 
 each tile to be treated as transparent. If the tile contained more colors, 
 the exact collapse into 4 or 3 colors is determined by PIL.
+
+If the file contains fewer than 256 complete 8x8 tiles, the output file will 
+be padded with zeroes to make it 4k long; if it contains more, the first 256 
+will be used and a warning will be issued.
 
 Any lossless file format supported by PIL should work (PNG, GIF, BMP, etc.).
 """
