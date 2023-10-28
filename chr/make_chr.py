@@ -12,6 +12,10 @@ and sorted into ascending-value order. This will cause the darkest color in
 each tile to be treated as transparent. If the tile contained more colors, 
 the exact collapse into 4 or 3 colors is determined by PIL.
 
+If the file contains fewer than 256 complete 8x8 tiles, the output file will 
+be padded with zeroes to make it 4k long; if it contains more, the first 256 
+will be used and a warning will be issued.
+
 Any lossless file format supported by PIL should work (PNG, GIF, BMP, etc.).
 """
 
