@@ -24,19 +24,24 @@ from pathlib import Path
 from sys import stderr
 
 from functools import reduce
-from itertools import chain
+from itertools import chain, batched
 from PIL import Image
 
 TILE_SIZE = 8
 
+def value_of(color):
+    return sum(a * b for a,b in zip(color, [.299, .587, .114]))
+
+def order_indices(palette):
+    return [idx for (idx, _) in sorted(palette, key=lambda clr: clr[1])]
+
 def sort_palette(image: Image) -> Image:
-    stream = image.getpalette()
-    colors = [stream[pos:pos+3] for pos in range(0, len(stream), 3)]
-    palette = list(enumerate(sum(a * b for a,b in zip(color, [.299, .587, .114])) for color in colors))
+    colors = batched(image.getpalette(), n=3)
+    palette = list(enumerate(value_of(color) for color in colors))
     sequence = \
-        [0] + [idx for (idx, _) in sorted(palette[1:], key=lambda clr: clr[1])] \
+        [0] + order_indices(palette[1:]) \
         if image.has_transparency_data else \
-        [idx for (idx, _) in sorted(palette, key=lambda clr: clr[1])]
+        order_indices(palette)
     return image.remap_palette(sequence)
 
 def tile_data(image: Image) -> (bytes, bytes):
@@ -56,24 +61,45 @@ def tile_data(image: Image) -> (bytes, bytes):
     planes = zip(*rows)
     return bytes(chain(*planes))
 
-def transcribe_chr(image: Image, outfile: Path):
+def transcribe_chr(image: Image, outfile: Path, width=1, limit=0, columns=False):
+    """
+    Takes a complete image and outputs it as a tile stream into a file at the specified location.
+
+    By default, issues a warning if the file size exceeds the typical 4k bank size but writes all tiles.
+
+    Optional arguments (note that width and limit use different units):
+        width: the stream will be extended to the next multiple of this many TILES.
+        limit: the stream will be cut off before it goes over this many BYTES
+        columns: set to True to scan the source file in column-major order.
+    """
     image = image.convert('RGBA' if image.has_transparency_data else 'RGB')
     try:
+        if image.height % TILE_SIZE != 0 or image.width % TILE_SIZE != 0:
+            print(f"WARNING: image dimensions ({image.width}, {image.height}) has margins over tile size {TILE_SIZE} that will be ignored.", file=stderr)
         with open(outfile, "wb") as file:
-            padding = 0x1000
-            for y in range(TILE_SIZE, image.height + 1, TILE_SIZE):
-                for x in range(TILE_SIZE, image.width + 1, TILE_SIZE): 
+            available = limit if limit != 0 else 0x1000   # default bank size
+            count = 0
+            for major in range(TILE_SIZE, image.height + 1, TILE_SIZE):
+                for minor in range(TILE_SIZE, image.width + 1, TILE_SIZE): 
+                    x, y = (major, minor) if columns else (minor, major)    # supports tall sprites
                     tile = tile_data(image.crop((x - TILE_SIZE, y - TILE_SIZE, x, y)))
-                    if padding < len(tile):
-                        raise StopIteration
-                    padding -= len(tile)
+                    if available < len(tile):
+                        if limit != 0:
+                            raise StopIteration
+                        else:
+                            print(f"WARNING: source file \"{outfile.name}\" contains more tiles than can fit in a 4k CHR archive.", file=stderr)
+                    available -= len(tile)
+                    count += 1;
                     file.write(tile)
-            file.write(bytes(0 for _ in range(padding)))
+            count %= width
+            if count > 0:
+                file.write(bytes(0 for _ in range((width - count) * TILE_SIZE + TILE_SIZE)))
     except StopIteration:
-        print(f"source file \"{outfile.name}\" contains more tiles than can fit in a 4k CHR archive.", file=stderr)
-    
+        print(f"source file \"{outfile.name}\" contains more tiles than can fit in the specified archive size.", file=stderr)
 
 if __name__ == "__main__":
+    #TODO: support user input for file padding, size limit, and scan order
+
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawTextHelpFormatter,
