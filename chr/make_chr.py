@@ -1,16 +1,17 @@
 """Convert an image to NES CHR tile data.
 
 For the most intuitive, consistent results, the input file should be 128x128,
-and each 8x8 tile should contain no more than four colors, with either 
-transparency (counted as a color if present) or black being interpreted as 
-transparent areas of the tile.
+and should contain no more than four colors, with either transparency 
+(counted as a color if present) or black being interpreted as transparent 
+areas of the tile.
 
-Complete 8x8 tiles will be copied starting from the top left of the image in 
-row-major order. Partial tiles at the right or bottom will be ignored. Each 
-tile will be converted to 4 colors (or 3 if the file supports transparency)
-and sorted into ascending-value order. This will cause the darkest color in 
+The image will be converted to 4 colors (or 3 colors plus transparency) and 
+sorted into ascending-value order. This will cause the darkest color in 
 each tile to be treated as transparent. If the tile contained more colors, 
 the exact collapse into 4 or 3 colors is determined by PIL.
+
+Complete 8x8 tiles will be copied starting from the top left of the image in 
+row-major order. Partial tiles at the right or bottom will be ignored.\
 
 If the file contains more than 256 complete 8x8 tiles, a warning will be issued.
 
