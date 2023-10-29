@@ -58,8 +58,6 @@ def tile_data(image: Image) -> bytes:
     if image.height != 8 or image.width != 8:
         raise RuntimeError("Tile must be 8x8 pixels.")
     # reduces tile to four colors
-    image = image.quantize(colors=4)
-    image = sort_palette(image)
     rows = [
         reduce(
             # consolidate parallel stream of bits into parallel stream of bytes
@@ -89,6 +87,8 @@ def transcribe_chr(image: Image, outfile: Path, width=1, limit=0, columns=False)
         columns: set to True to scan the source file in column-major order.
     """
     image = image.convert('RGBA' if image.has_transparency_data else 'RGB')
+    image = image.quantize(colors=4)
+    image = sort_palette(image)
     try:
         if image.height % TILE_SIZE != 0 or image.width % TILE_SIZE != 0:
             print(f"WARNING: image dimensions ({image.width}, {image.height}) has margins over tile size {TILE_SIZE} that will be ignored.", file=stderr)
