@@ -23,32 +23,35 @@ from pathlib import Path
 from sys import stderr
 
 from functools import reduce
-from itertools import chain, batched
+from itertools import chain
 from PIL import Image
 
 TILE_SIZE = 8
 
 def value_of(color):
+    if len(color) > 3 and color[3] == 0:
+        return -math.inf
     return sum(a * b for a,b in zip(color, [.299, .587, .114]))
 
-def order_indices(palette):
-    return [idx for (idx, _) in sorted(palette, key=lambda clr: clr[1])]
-
 def sort_palette(image: Image) -> Image:
-    # group color channels into three-channel color lists
-    colors = batched(image.getpalette(), n=3)
+    # group color channels into full-channel color lists
+    channels = 4 if image.has_transparency_data else 3
+    # batched is only available in Python 3.12
+    try:
+        from itertools import batched
+        colors = batched(image.palette.tobytes(), n=channels)
+    except:
+        stream = image.palette.tobytes()
+        colors = [stream[pos:pos+channels] for pos in range(0, len(stream), channels)]
     palette = list(enumerate(value_of(color) for color in colors))
     # sort non-transparent colors by value and save only index order
-    sequence = \
-        [0] + order_indices(palette[1:]) \
-        if image.has_transparency_data else \
-        order_indices(palette)
-    return image.remap_palette(sequence)
+    palette = [idx for (idx, _) in sorted(palette, key=lambda gray: gray[1])]
+    return image.remap_palette(palette)
 
 def tile_data(image: Image) -> bytes:
     """
-    Convert an 8x8 image to a tile bytestream.
-    The bytes will be ordered into two planes, where the first plane 
+    Converts an 8x8 image to a tile bytestream.
+    The bytes will be ordered into two planes, where the first plane    
     holds the low-order bit of each pixel and the second plane holds
     the high-order bit.
     """
@@ -62,7 +65,7 @@ def tile_data(image: Image) -> bytes:
             # consolidate parallel stream of bits into parallel stream of bytes
             lambda a, b: (a[0] << 1 | b[0], a[1] << 1 | b[1]),
             (
-                (px >> 1 & 0b01, px & 0b01) for px in 
+                (px & 0b01, px >> 1 & 0b01) for px in 
                 (image.getpixel((x, y)) for x in range(image.width))
             ),
             (0, 0)
@@ -107,7 +110,7 @@ def transcribe_chr(image: Image, outfile: Path, width=1, limit=0, columns=False)
                     available -= len(tile)
                     count += 1;
                     file.write(tile)
-            # pad file to speicifed tile width
+            # pad file to specified tile width
             count %= width
             if count > 0:
                 file.write(bytes(0 for _ in range((width - count) * TILE_SIZE + TILE_SIZE)))
