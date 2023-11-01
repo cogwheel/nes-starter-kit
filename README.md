@@ -16,7 +16,7 @@ The rest of these should be available in your PATH:
 - [CMake](https://cmake.org/download/)
 - [Ninja](https://ninja-build.org/)
 - [Python 3](https://www.python.org/downloads/)
-  - [Pillow](https://pillow.readthedocs.io/en/stable/) - for converting PNG to CHR
+  - [Pillow (10.1.0 or higher)](https://pillow.readthedocs.io/en/stable/) - for converting PNG to CHR
 
 ## Building
 

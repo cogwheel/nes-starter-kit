@@ -1,102 +1,127 @@
 """Convert an image to NES CHR tile data.
 
-The input image must be 128 pixels wide and use exactly 4 colors when converted
-to grayscale.  Darker colors in the source image will be given lower palette
-indexes in the tile data. (TODO: make this customizable)
+For the most intuitive, consistent results, the input file should be 128x128,
+and should contain no more than four colors, with either transparency 
+(counted as a color if present) or black being interpreted as transparent 
+areas of the tile.
+
+The image will be converted to 4 colors (or 3 colors plus transparency) and 
+sorted into ascending-value order. This will cause the darkest color in 
+each tile to be treated as transparent. If the tile contained more colors, 
+the exact collapse into 4 or 3 colors is determined by PIL.
+
+Complete 8x8 tiles will be copied starting from the top left of the image in 
+row-major order. Partial tiles at the right or bottom will be ignored.\
+
+If the file contains more than 256 complete 8x8 tiles, a warning will be issued.
 
 Any lossless file format supported by PIL should work (PNG, GIF, BMP, etc.).
 """
 
+import math
 import argparse
-from numbers import Number
 from pathlib import Path
-from typing import Any, IO, Mapping
+from sys import stderr
 
+from functools import reduce
+from itertools import chain
 from PIL import Image
 
 TILE_SIZE = 8
 
+def value_of(color):
+    if len(color) > 3 and color[3] == 0:
+        return -math.inf
+    return sum(a * b for a,b in zip(color, [.299, .587, .114]))
 
-def write_tile(
-    image: Image,
-    image_x: Number,
-    image_y: Number,
-    colormap: Mapping[Number, Number],
-    outfile: IO[Any],
-):
-    """Write an 8x8 tile of image data to the output file.
+def sort_palette(image: Image) -> Image:
+    # group color channels into full-channel color lists
+    channels = 4 if image.has_transparency_data else 3
+    # batched is only available in Python 3.12
+    try:
+        from itertools import batched
+        colors = batched(image.palette.tobytes(), n=channels)
+    except:
+        stream = image.palette.tobytes()
+        colors = [stream[pos:pos+channels] for pos in range(0, len(stream), channels)]
+    palette = list(enumerate(value_of(color) for color in colors))
+    # sort non-transparent colors by value and save only index order
+    palette = [idx for (idx, _) in sorted(palette, key=lambda gray: gray[1])]
+    return image.remap_palette(palette)
 
-    Args:
-        image: grayscale image data to save in CHR format color
-        image_x, image_y: starting coordinate (upper-left) in the source image
-            for tile data
-        colormap: a map from grayscale color to palette index
-        outfile: the file to write
-
-    TODO: convert the image to indexes before we get here
+def tile_data(image: Image) -> bytes:
     """
-
-    # Each 8x8 tile of CHR data is split into two 1bpp "planes". Plane 0 holds
-    # the lower bit of the color index, and plane 1 holds the upper bit.
-    plane0 = []
-    plane1 = []
-
-    for tile_y in range(TILE_SIZE):
-        plane0_byte = 0
-        plane1_byte = 0
-
-        # Pixel data for each row is stored in a single byte. The left-most
-        # (first) pixel is in the highest bit. So we go pixel by pixel in the
-        # source image, and shift in either the 0th or 1st bit of the color
-        # value
-        for bit in range(TILE_SIZE):
-            color = colormap[image.getpixel((image_x + bit, image_y + tile_y))]
-
-            # Shift the low bit into plane 0
-            plane0_byte <<= 1
-            plane0_byte |= color & 0b01
-
-            # Shift the high bit into plane 1
-            plane1_byte <<= 1
-            plane1_byte |= color & 0b10
-
-        plane0.append(plane0_byte)
-
-        # Shift plane 1 byte down to the 1s place and store it
-        plane1_byte >>= 1
-        plane1.append(plane1_byte)
-
-    outfile.write(bytes(plane0))
-    outfile.write(bytes(plane1))
-
-
-def make_chr(image: Image, outfile: Path):
-    """Generate a CHR file from the given grayscale image"""
-
-    # TODO: maybe use numpy but it's probably not nearly enough data to matter
-
-    # Figure out which 4 shades are used by the image and sort them by
-    # brightness
-    colors = sorted(
-        set(
-            image.getpixel((x, y))
-            for y in range(image.height)
-            for x in range(image.width)
+    Converts an 8x8 image to a tile bytestream.
+    The bytes will be ordered into two planes, where the first plane    
+    holds the low-order bit of each pixel and the second plane holds
+    the high-order bit.
+    """
+    if image.height != 8 or image.width != 8:
+        raise RuntimeError("Tile must be 8x8 pixels.")
+    # reduces tile to four colors
+    rows = [
+        reduce(
+            # consolidate parallel stream of bits into parallel stream of bytes
+            lambda a, b: (a[0] << 1 | b[0], a[1] << 1 | b[1]),
+            (
+                (px & 0b01, px >> 1 & 0b01) for px in 
+                (image.getpixel((x, y)) for x in range(image.width))
+            ),
+            (0, 0)
         )
-    )
-    assert len(colors) == 4
+        for y in range(image.height)
+    ]
+    #convert sequence of pairs to pair of sequences
+    planes = zip(*rows)
+    # concatenate sequences (low plane then high plane) and generate bytestream
+    return bytes(chain(*planes))
 
-    # Make it easy to get color index for given source image color
-    colormap = {color: i for i, color in enumerate(colors)}
+def transcribe_chr(image: Image, outfile: Path, width=1, limit=0, columns=False):
+    """
+    Takes a complete image and outputs it as a tile stream into a file at the specified location.
 
-    # Create the CHR file
-    with open(outfile, "wb") as file:
-        for image_y in range(0, image.height, TILE_SIZE):
-            for image_x in range(0, image.width, TILE_SIZE):
-                write_tile(image, image_x, image_y, colormap, file)
+    By default, issues a warning if the file size exceeds the typical 4k bank size but writes all tiles.
 
+    Optional arguments (note that width and limit use different units):
+        width: the stream will be extended to the next multiple of this many TILES.
+        limit: the stream will be cut off before it goes over this many BYTES
+        columns: set to True to scan the source file in column-major order.
+    """
+    image = image.convert('RGBA' if image.has_transparency_data else 'RGB')
+    image = image.quantize(colors=4)
+    image = sort_palette(image)
+    try:
+        if image.height % TILE_SIZE != 0 or image.width % TILE_SIZE != 0:
+            print(f"WARNING: image dimensions ({image.width}, {image.height}) has margins over tile size {TILE_SIZE} that will be ignored.", file=stderr)
+        with open(outfile, "wb") as file:
+            available = limit if limit != 0 else 0x1000   # default bank size
+            count = 0
+            # iterate over tiles in image
+            for major in range(TILE_SIZE, image.height + 1, TILE_SIZE):
+                for minor in range(TILE_SIZE, image.width + 1, TILE_SIZE): 
+                    x, y = (major, minor) if columns else (minor, major)    # supports tall sprites
+                    tile = tile_data(image.crop((x - TILE_SIZE, y - TILE_SIZE, x, y)))
+                    if available < len(tile):
+                        # hard limit on file size?
+                        if limit != 0:
+                            raise StopIteration
+                        else:
+                            print(f"WARNING: source file \"{outfile.name}\" contains more tiles than can fit in a 4k CHR archive.", file=stderr)
+                            available = math.inf    # disable further warnings
+                    available -= len(tile)
+                    count += 1;
+                    file.write(tile)
+            # pad file to specified tile width
+            count %= width
+            if count > 0:
+                file.write(bytes(0 for _ in range((width - count) * TILE_SIZE + TILE_SIZE)))
+    except StopIteration:
+        # file larger than specified limit
+        print(f"source file \"{outfile.name}\" contains more tiles than can fit in the specified archive size.", file=stderr)
 
 if __name__ == "__main__":
+    #TODO: support user input for file padding, size limit, and scan order
+
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawTextHelpFormatter,
@@ -110,6 +135,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     image = Image.open(args.source)
-    image = image.convert(mode="L")
-
-    make_chr(image, args.dest)
+    transcribe_chr(image, args.dest)
