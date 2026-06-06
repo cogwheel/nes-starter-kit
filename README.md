@@ -1,3 +1,7 @@
+# Project Moved
+
+[Cogwheel's NES Starter Kit](https://codeberg.org/cogwheel/nes-starter-kit) is now hosted on codeberg.org
+
 # Cogwheel's NES Starter Kit
 
 This is an example project using llvm-mos targeting the MMC1 mapper. It's very much work-in-progress. There will be more to come.
